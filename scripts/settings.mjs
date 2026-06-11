@@ -48,15 +48,5 @@ export class ModuleSettings {
       requiresReload: true,
       onChange: false
     });
-
-    game.settings.register(MODULE, SETTINGS.EMOJI, {
-      name: "CHATEDIT.SETTINGS.Emoji.Name",
-      hint: "CHATEDIT.SETTINGS.Emoji.Hint",
-      scope: "world",
-      type: Boolean,
-      config: true,
-      default: false,
-      requiresReload: true
-    });
   }
 }

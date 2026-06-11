@@ -1,4 +1,4 @@
-import { MODULE, CHATEDIT_CONST, SETTINGS, localize } from "./const.mjs";
+import { MODULE, CHATEDIT_CONST, SETTINGS, localize, hasShowdown } from "./const.mjs";
 import { Editing } from "./editing.mjs";
 
 let polyglotInitialized = false;
@@ -15,26 +15,13 @@ export class ProcessChat {
     if (polyglotActive && !polyglotInitialized) return;
     else if (!polyglotActive) Hooks.off("polyglot.init", onPolyglotInitHook);
 
-    if (game.settings.get(MODULE, SETTINGS.MARKDOWN)) {
+    if (game.settings.get(MODULE, SETTINGS.MARKDOWN) && hasShowdown()) {
       Hooks.on("preCreateChatMessage", ProcessChat.processShowdown);
       ProcessChat._showdownOptions();
-      ProcessChat.enrichers();
     }
     // This is the problem. renderChatMessage got removed and replaced with renderChatMessageHTML
     Hooks.on("renderChatMessageHTML", ProcessChat._edited);
     Hooks.on("renderChatMessageHTML", ProcessChat._ooc);
-  }
-
-  /**
-   * Make em dashes.
-   */
-  static enrichers() {
-    CONFIG.TextEditor.enrichers.push(
-      {
-        pattern: /--/gim,
-        enricher: async () => { return "—" }
-      }
-    );
   }
 
   /**
@@ -77,12 +64,19 @@ export class ProcessChat {
     showdown.setOption('moreStyling', true);
     showdown.setOption('disableForced4SpacesIndentedSublists', true);
     showdown.setOption('smartIndentationFix', true);
-    if (game.settings.get(MODULE, SETTINGS.EMOJI)) showdown.setOption('emoji', true);
     showdown.extension("inline", function () {
       return [{
         type: "output",
-        filter: function (markdown) {
-          return markdown.replace(/<\/?p[^>]*>/gm, "");
+        filter: function (text) {
+          // Em dash shorthand, scoped to chatedit-processed messages (was a
+          // global CONFIG.TextEditor enricher that affected all of Foundry).
+          let out = text.replace(/--/g, "—");
+          // Unwrap a lone top-level <p> so simple inline messages stay compact,
+          // but preserve block structure (lists, blockquotes, multi-paragraph)
+          // instead of stripping every <p> and flattening it.
+          const single = out.match(/^\s*<p>([\s\S]*?)<\/p>\s*$/);
+          if (single && !/<p[ >]/i.test(single[1])) out = single[1];
+          return out;
         }
       }];
     });
@@ -101,7 +95,10 @@ export class ProcessChat {
     let edited;
     if (show === 1) edited = `<span class="chatedited"> ${localize('CHATEDIT.EDITS.Flag')}<span>`;
     else if (show === 2) edited = '<i class="fa-solid fa-eraser"></i>';
+    if (!edited) return;
+    // Some systems restyle chat cards and may not render a .message-timestamp.
     const meta = html.querySelector('.message-timestamp');
+    if (!meta) return;
     meta.insertAdjacentHTML('afterend', edited);
   }
 

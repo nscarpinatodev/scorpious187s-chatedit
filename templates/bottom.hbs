@@ -1,4 +1,8 @@
 <textarea name="content" autocomplete="off">{{content}}</textarea>
+{{#if markdownEnabled}}
+<h5>{{localize "CHATEDIT.EDITS.Preview"}}</h5>
+<div class="chatedit-preview" data-preview aria-live="polite"></div>
+{{/if}}
 <br>
 <div class="actions">
   <button type="submit">

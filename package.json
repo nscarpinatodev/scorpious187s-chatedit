@@ -1,22 +1,22 @@
 {
-  "name": "chatedit-new",
-  "version": "1.0.0",
+  "name": "scorpious187s-chatedit",
+  "version": "0.9.0",
   "scripts": {
     "build": "rollup -c rollup.config.mjs"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rydoq/chatedit-new.git"
+    "url": "git+https://github.com/nscarpinatodev/scorpious187s-chatedit.git"
   },
   "keywords": [
     "fvtt",
     "module"
   ],
-  "author": "rydoq",
+  "author": "Scorpious187",
   "bugs": {
-    "url": "https://github.com/rydoq/chatedit-new"
+    "url": "https://github.com/nscarpinatodev/scorpious187s-chatedit/issues"
   },
-  "homepage": "https://github.com/rydoq/chatedit-new",
+  "homepage": "https://github.com/nscarpinatodev/scorpious187s-chatedit",
   "devDependencies": {
     "rollup": "^4.22.4"
   }

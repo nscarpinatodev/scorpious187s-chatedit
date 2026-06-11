@@ -1,4 +1,4 @@
-# Chat Edit Anduril
+# Scorpious187's Chat Edit
 A module for editing and styling chat messages. It is a lightweight chat editor, with no module dependencies and no external libraries. It is *not* a 'chat enhancement' module (though it might be mistaken for one). Its intent is to bring the Foundry chat message experience to the bare minimum of acceptability for text roleplay.
 
 ## Features
@@ -12,10 +12,9 @@ If <a href= "https://foundryvtt.com/packages/polyglot">Polyglot</a> is enabled, 
 - Allow Editing (on by default). *World setting*.
 - Show Edited Messages: show message, show icon, do not show (shows icon by default). *World setting*. - The show message option has a visual bug where as the timestamp changes, the game adds or removes a whitespace. I recommend using the icon.
 - Markdown Styling (on by default). *Client setting*.
-- Allow Emojis (off by default). *World setting*. - Note that this doesn't seem to do anything through my testing so I'll probably get rid of it in a future version? I'm always able to edit in emojis no matter if this is on or not at least.
 
-## Now Only Supports v13
-If you want a version that supports v11 or v12 of Foundry, please download from the original mod here: https://github.com/etiquettestartshere/chatedit. Note it will not have Polyglot support.
+## Foundry Compatibility
+Supports Foundry v13 and v14 (minimum v13, verified on v14). If you want a version that supports v11 or v12 of Foundry, please download from the original mod here: https://github.com/etiquettestartshere/chatedit. Note it will not have Polyglot support.
 
 ## System Requirements
 This module is, to the best of my abilities, designed to be system agnostic. The most obvious failure point would be allowing messages that are not supposed to be edited to be edited, or the (edited) message or icon displaying incorrectly depending on system's chat cards. The original mod was tested on dnd5e and swb and I've tested it on PF2e. If you find that it does not function as desired on another system, please make a github issue about it and compatibility will be investigated.

@@ -1,3 +1,7 @@
 chatedit.lock
 DEMO.md
 node_modules/
+
+# Build artifacts produced by `npm run build` / the release workflow
+chatedit.mjs
+chatedit.css

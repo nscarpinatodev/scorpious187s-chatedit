@@ -1,7 +1,7 @@
 export default {
   input: "scripts/setup.mjs",
   output: {
-    file: "chatedit-new.mjs",
+    file: "chatedit.mjs",
     format: "esm"
   }
 };

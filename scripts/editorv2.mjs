@@ -1,4 +1,4 @@
-import {MODULE, SETTINGS} from "./const.mjs";
+import {MODULE, SETTINGS, hasShowdown} from "./const.mjs";
 import { Editing } from "./editing.mjs";
 
 const ApplicationV2 = foundry.applications?.api?.ApplicationV2 ?? (class { });
@@ -109,13 +109,14 @@ export default class EditorV2 extends HandlebarsApplicationMixin(ApplicationV2) 
     }
 
     let html = this.message.content;
-    if (game.settings.get(MODULE, SETTINGS.MARKDOWN)) html = htmlToMarkdown(html);
+    if (game.settings.get(MODULE, SETTINGS.MARKDOWN) && hasShowdown()) html = htmlToMarkdown(html);
 
     const context = foundry.utils.mergeObject(options, {
       speakers,
       alias: this.message.speaker.alias ?? null,
       content: html,
       hasPolyglot: !!PolyglotProvider,   // flag for Handlebars
+      markdownEnabled: game.settings.get(MODULE, SETTINGS.MARKDOWN) && hasShowdown(),
       languagesByToken
     });
 
@@ -131,6 +132,17 @@ export default class EditorV2 extends HandlebarsApplicationMixin(ApplicationV2) 
     const langSel = root.querySelector("[name='language']");
     const aliasInput = root.querySelector("[name='alias']");
     Editing._alias(speakerSel, aliasInput);
+
+    // Live markdown preview: re-render the parsed HTML as the user types.
+    const contentEl = root.querySelector("[name='content']");
+    const previewEl = root.querySelector("[data-preview]");
+    if (contentEl && previewEl) {
+      const renderPreview = () => {
+        previewEl.innerHTML = Editing._markdownToHtml(contentEl.value);
+      };
+      renderPreview();
+      contentEl.addEventListener("input", renderPreview);
+    }
 
     const byToken = this.context?.languagesByToken ?? {};
     const provider = PolyglotProvider || game.polyglot?.LanguageProvider;

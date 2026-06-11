@@ -1,4 +1,4 @@
-import { MODULE, CHATEDIT_CONST, SETTINGS, localize } from "./const.mjs";
+import { MODULE, CHATEDIT_CONST, SETTINGS, localize, hasShowdown } from "./const.mjs";
 import EditorV2 from "./editorv2.mjs";
 
 let PolyglotProvider = null;
@@ -62,10 +62,26 @@ export class Editing {
   /* -------------------------------------------- */
 
   /**
-   * Deal with the type to style deprecation in v12.
+   * The ChatMessage field used for message style.
+   * (The v11 "type" / v12+ "style" split is gone now that we require v13+.)
    */
   static styleType() {
-    return foundry.utils.isNewerVersion(12, game.version) ? "type" : "style";
+    return "style";
+  }
+
+  /**
+   * Convert a message's markdown into the inline HTML stored on the document.
+   * Used by both the submit handler and the editor's live preview. Line breaks
+   * are left to Showdown (simpleLineBreaks) so block elements such as lists and
+   * blockquotes survive rather than being flattened into <br> tags.
+   * @param {string} content              The markdown source.
+   * @param {showdown.Converter} [parser] An existing converter to reuse.
+   * @returns {string} The parsed inline HTML (empty string for empty input).
+   */
+  static _markdownToHtml(content, parser) {
+    if (!content) return "";
+    parser ??= new showdown.Converter({ extensions: ["inline"] });
+    return parser.makeHtml(String(content)).trim();
   }
 
   /**
@@ -123,21 +139,12 @@ export class Editing {
     if (data.alias) foundry.utils.mergeObject(speaker, { alias: data.alias });
 
     // Handle (don't destroy) markdown
-    if (game.settings.get(MODULE, SETTINGS.MARKDOWN)) {
+    if (game.settings.get(MODULE, SETTINGS.MARKDOWN) && hasShowdown()) {
 
       const parser = new showdown.Converter({ extensions: ["inline"] });
 
       // Markdown -> HTML (for saving back into the chat message)
-      function markdownToHtml(markdown) {
-        if (!markdown) return "";
-
-        let s = String(markdown).replace(/\n/g, "<br>");
-
-        return parser.makeHtml(s).trim();
-      }
-
-      // Create the parser and parse
-      const parsed = markdownToHtml(content);
+      const parsed = Editing._markdownToHtml(content, parser);
 
       // Call the pre process hook, then process
       const callback = Hooks.call("chatedit.preProcessChatMessage", message, parsed, parser, userid);
@@ -255,22 +262,32 @@ export class Editing {
    * @param {string} id The id of the ChatMessage to be edited.
    */
   static _makeIC(id) {
-    let STYLETYPE = Editing.styleType();
-    let style;
-    const character = canvas.tokens.controlled[0] ?? game.user.character;
-    const message = game.messages.get(id);
-    const speaker = ChatMessage.getSpeaker({ actor: character });
+    const STYLETYPE = Editing.styleType();
 
-    //Handle emotes
-    message.content.startsWith(character.name) ?
-      style = CHATEDIT_CONST.CHAT_MESSAGE_STYLES.EMOTE :
-      style = CHATEDIT_CONST.CHAT_MESSAGE_STYLES.IC
+    // A controlled token is a placeable (use its TokenDocument as speaker);
+    // game.user.character is an Actor. Resolve both so we build the speaker
+    // and query Polyglot consistently regardless of which one we have.
+    const token = canvas.tokens.controlled[0] ?? null;
+    const actor = token?.actor ?? game.user.character;
+    if (!actor) return ui.notifications.warn(localize('CHATEDIT.EDITS.NotAllowed'));
+
+    const message = game.messages.get(id);
+    const speaker = token
+      ? ChatMessage.getSpeaker({ token: token.document })
+      : ChatMessage.getSpeaker({ actor });
+
+    // Handle emotes (compare against the resolved speaker alias).
+    const style = message.content.startsWith(speaker.alias)
+      ? CHATEDIT_CONST.CHAT_MESSAGE_STYLES.EMOTE
+      : CHATEDIT_CONST.CHAT_MESSAGE_STYLES.IC;
     message.update({ [STYLETYPE]: style, speaker });
+
     if (PolyglotProvider) {
       const defaultLanguage = PolyglotProvider.defaultLanguage;
-      const language = (game.polyglot.getUserLanguages([character].actor)[0].has(defaultLanguage) ? defaultLanguage :
-          game.polyglot.getUserLanguages([character].actor)[0].values().next().value) ??
-        defaultLanguage;
+      const [known] = game.polyglot.getUserLanguages([actor]);
+      const language = (known?.has(defaultLanguage)
+        ? defaultLanguage
+        : known?.values().next().value) ?? defaultLanguage;
       message.setFlag("polyglot", "language", language);
     }
     ChangeDorakoUIImage(speaker, message);
