@@ -1,6 +1,6 @@
 {
   "name": "scorpious187s-chatedit",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "scripts": {
     "build": "rollup -c rollup.config.mjs"
   },
