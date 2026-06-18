@@ -10,7 +10,8 @@ export const CHATEDIT_CONST = {
 export const SETTINGS = {
   EDIT: "allowEdit",
   MARKDOWN: "markdown",
-  SHOW: "showEdited"
+  SHOW: "showEdited",
+  TYPING: "typingIndicator"
 };
 export const localize = (key) => game.i18n.localize(key);
 

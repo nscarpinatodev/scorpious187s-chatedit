@@ -14,6 +14,11 @@
       "Speaker": "Speaker",
       "Title": "Editing Message"
     },
+    "TYPING": {
+      "One": "{name} is typing…",
+      "Two": "{name1} and {name2} are typing…",
+      "Many": "Several people are typing…"
+    },
     "SETTINGS": {
       "AllowEdit": {
         "Name": "Allow Editing",
@@ -22,6 +27,10 @@
       "Markdown": {
         "Name": "Markdown Styling",
         "Hint": "Enable markdown styling of chat messages."
+      },
+      "Typing": {
+        "Name": "Typing Indicator",
+        "Hint": "Show a Discord-style \"is typing\" indicator above the chat box when other players are composing a message. A leading \"/\" (commands and whispers) is never broadcast."
       },
       "ShowEdited": {
         "Icon": "Show Icon",

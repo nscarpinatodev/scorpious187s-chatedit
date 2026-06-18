@@ -6,6 +6,7 @@ export class ModuleSettings {
   static init() {
     ModuleSettings._editing();
     ModuleSettings._markdown();
+    ModuleSettings._typing();
   }
 
   // Register the settings
@@ -47,6 +48,18 @@ export class ModuleSettings {
       default: true,
       requiresReload: true,
       onChange: false
+    });
+  }
+
+  static _typing() {
+    game.settings.register(MODULE, SETTINGS.TYPING, {
+      name: "CHATEDIT.SETTINGS.Typing.Name",
+      hint: "CHATEDIT.SETTINGS.Typing.Hint",
+      scope: "world",
+      type: Boolean,
+      config: true,
+      default: true,
+      requiresReload: true
     });
   }
 }
