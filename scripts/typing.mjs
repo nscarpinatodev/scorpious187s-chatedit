@@ -28,8 +28,14 @@ export class Typing {
 
     game.socket.on(SOCKET, Typing._onSocket);
 
-    // (Re)inject the indicator whenever a chat log renders (sidebar or popout).
-    Hooks.on("renderChatLog", (app, html) => Typing._onRenderChatLog(html));
+    // The chat composer (#chat-message) is rendered apart from the chat log and
+    // re-parented as the sidebar/popout state changes, so (re)place the
+    // indicator on each of these triggers. Hook names that don't exist simply
+    // never fire — harmless.
+    for (const hook of ["renderChatInput", "renderChatLog", "changeSidebarTab", "collapseSidebar"]) {
+      Hooks.on(hook, () => Typing._place());
+    }
+    Hooks.once("ready", () => Typing._place());
 
     // Stop broadcasting the moment a message is actually sent from the input.
     Hooks.on("chatMessage", () => Typing._emit("stop"));
@@ -40,42 +46,49 @@ export class Typing {
   /* -------------------------------------------- */
 
   /**
-   * Inject the indicator and wire input listeners for one chat log.
-   * @param {HTMLElement|jQuery} html The rendered chat log element.
+   * (Re)place a typing indicator directly above every chat composer in the DOM
+   * and wire input listeners. The chat input (#chat-message) is rendered apart
+   * from the chat log and re-parented as the sidebar/popout state changes, so
+   * this runs on every relevant render hook and follows the input.
    */
-  static _onRenderChatLog(html) {
-    const root = html instanceof HTMLElement ? html : html?.[0];
-    if (!root) return;
+  static _place() {
+    const inputs = document.querySelectorAll("#chat-message, textarea[name='chat-message']");
+    for (const textarea of inputs) {
+      const anchor = textarea.closest("form, .chat-form, .chat-input, fieldset") ?? textarea;
 
-    // The only textarea inside a chat log is the message composer.
-    const textarea = root.querySelector(
-      "textarea[name='chat-message'], #chat-message, textarea.chat-input, textarea"
-    );
-    if (!textarea) return;
+      // Reuse an indicator already sitting above this input, else create one.
+      let indicator = anchor.previousElementSibling;
+      if (!indicator?.classList?.contains("chatedit-typing-indicator")) {
+        indicator = Typing._createIndicator();
+        anchor.before(indicator);
+      }
 
-    // Create the indicator directly above the input area (once per chat log).
-    if (!root.querySelector(".chatedit-typing-indicator")) {
-      const anchor = textarea.closest("form, .chat-input, .chat-form") ?? textarea;
-      const indicator = document.createElement("div");
-      indicator.className = "chatedit-typing-indicator";
-      indicator.hidden = true;
-      indicator.innerHTML =
-        '<span class="chatedit-typing-dots"><i></i><i></i><i></i></span>' +
-        '<span class="chatedit-typing-text"></span>';
-      anchor.before(indicator);
-    }
-
-    // Attach input listeners once per textarea element.
-    if (!textarea.dataset.chateditTyping) {
-      textarea.dataset.chateditTyping = "1";
-      textarea.addEventListener("input", Typing._onInput);
-      textarea.addEventListener("blur", () => Typing._emit("stop"));
-      textarea.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" && !event.shiftKey) Typing._emit("stop");
-      });
+      // Attach input listeners once per textarea element.
+      if (!textarea.dataset.chateditTyping) {
+        textarea.dataset.chateditTyping = "1";
+        textarea.addEventListener("input", Typing._onInput);
+        textarea.addEventListener("blur", () => Typing._emit("stop"));
+        textarea.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" && !event.shiftKey) Typing._emit("stop");
+        });
+      }
     }
 
     Typing._refresh();
+  }
+
+  /**
+   * Build a hidden typing-indicator element.
+   * @returns {HTMLDivElement}
+   */
+  static _createIndicator() {
+    const el = document.createElement("div");
+    el.className = "chatedit-typing-indicator";
+    el.hidden = true;
+    el.innerHTML =
+      '<span class="chatedit-typing-dots"><i></i><i></i><i></i></span>' +
+      '<span class="chatedit-typing-text"></span>';
+    return el;
   }
 
   /**
