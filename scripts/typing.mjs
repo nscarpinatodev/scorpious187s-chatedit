@@ -96,17 +96,31 @@ export class Typing {
    * @param {InputEvent} event
    */
   static _onInput(event) {
-    const value = event.currentTarget.value;
+    // The v13+ chat composer is a rich-text (ProseMirror) field whose value is
+    // HTML (e.g. "<p>/w Bob</p>"), so extract plain text before the checks.
+    const text = Typing._plainText(event.currentTarget.value);
 
     // Don't broadcast for empty input, or for a leading "/" — that's a slash
     // command or whisper (e.g. /w, /gmroll), which should stay private.
-    if (!value.trim() || value.startsWith("/")) return Typing._emit("stop");
+    if (!text || text.startsWith("/")) return Typing._emit("stop");
 
     const now = Date.now();
     if (!Typing._broadcasting || now - Typing._lastEmit > THROTTLE_MS) Typing._emit("start");
 
     clearTimeout(Typing._idleTimer);
     Typing._idleTimer = setTimeout(() => Typing._emit("stop"), IDLE_MS);
+  }
+
+  /**
+   * Extract trimmed plain text from the chat composer's value. The v13+ input
+   * is a ProseMirror field whose value is HTML, so tags must be stripped before
+   * the empty / slash-command checks.
+   * @param {string} value
+   * @returns {string}
+   */
+  static _plainText(value) {
+    const doc = new DOMParser().parseFromString(String(value ?? ""), "text/html");
+    return (doc.body.textContent ?? "").trim();
   }
 
   /**
