@@ -52,16 +52,15 @@ export class Typing {
    * this runs on every relevant render hook and follows the input.
    */
   static _place() {
+    // Remove every existing indicator first. The chat input is re-parented as
+    // the sidebar/popout state changes, which would otherwise leave an orphaned
+    // indicator behind on each move and stack up duplicates over a session.
+    for (const el of document.querySelectorAll(".chatedit-typing-indicator")) el.remove();
+
     const inputs = document.querySelectorAll("#chat-message, textarea[name='chat-message']");
     for (const textarea of inputs) {
       const anchor = textarea.closest("form, .chat-form, .chat-input, fieldset") ?? textarea;
-
-      // Reuse an indicator already sitting above this input, else create one.
-      let indicator = anchor.previousElementSibling;
-      if (!indicator?.classList?.contains("chatedit-typing-indicator")) {
-        indicator = Typing._createIndicator();
-        anchor.before(indicator);
-      }
+      anchor.before(Typing._createIndicator());
 
       // Attach input listeners once per textarea element.
       if (!textarea.dataset.chateditTyping) {
