@@ -6,12 +6,13 @@ const IDLE_MS = 4000;     // local: stop broadcasting after this much inactivity
 const EXPIRE_MS = 6000;   // remote: auto-clear a typer if no refresh/stop arrives
 
 /**
- * Discord-style "<user> is typing" indicator shown directly above the chat box.
+ * "<user> is typing" indicator pinned to the bottom of the chat sidebar.
  *
  * Each client listens for input on its own chat composer and broadcasts a
  * throttled start/stop over the module socket. Every client keeps the set of
- * who is currently typing and renders the indicator above the chat input. Names
- * are resolved locally from the user id, so only ids travel over the wire.
+ * who is currently typing and renders the indicator at the bottom of the chat
+ * sidebar. Names are resolved locally from the user id, so only ids travel over
+ * the wire.
  */
 export class Typing {
 
@@ -46,10 +47,10 @@ export class Typing {
   /* -------------------------------------------- */
 
   /**
-   * (Re)place a typing indicator directly above every chat composer in the DOM
-   * and wire input listeners. The chat input (#chat-message) is rendered apart
-   * from the chat log and re-parented as the sidebar/popout state changes, so
-   * this runs on every relevant render hook and follows the input.
+   * (Re)place a typing indicator at the bottom of every chat sidebar and wire
+   * input listeners. The chat input (#chat-message) is rendered apart from the
+   * chat log and re-parented as the sidebar/popout state changes, so this runs
+   * on every relevant render hook and follows the input.
    */
   static _place() {
     // Remove every existing indicator first. The chat input is re-parented as
@@ -59,8 +60,10 @@ export class Typing {
 
     const inputs = document.querySelectorAll("#chat-message, textarea[name='chat-message']");
     for (const textarea of inputs) {
-      const anchor = textarea.closest("form, .chat-form, .chat-input, fieldset") ?? textarea;
-      anchor.before(Typing._createIndicator());
+      // Append to the bottom of the chat form so the indicator sits at the
+      // bottom of the sidebar, below the input (mirroring CGMP).
+      const form = textarea.closest(".chat-form") ?? textarea.closest("form") ?? textarea.parentElement;
+      form?.appendChild(Typing._createIndicator());
 
       // Attach input listeners once per textarea element.
       if (!textarea.dataset.chateditTyping) {
@@ -82,8 +85,7 @@ export class Typing {
    */
   static _createIndicator() {
     const el = document.createElement("div");
-    el.className = "chatedit-typing-indicator";
-    el.hidden = true;
+    el.className = "chatedit-typing-indicator chatedit-typing-collapsed";
     el.innerHTML =
       '<span class="chatedit-typing-dots"><i></i><i></i><i></i></span>' +
       '<span class="chatedit-typing-text"></span>';
@@ -174,7 +176,7 @@ export class Typing {
     const text = Typing._label(names);
     for (const el of document.querySelectorAll(".chatedit-typing-indicator")) {
       el.querySelector(".chatedit-typing-text").textContent = text;
-      el.hidden = names.length === 0;
+      el.classList.toggle("chatedit-typing-collapsed", names.length === 0);
     }
   }
 
